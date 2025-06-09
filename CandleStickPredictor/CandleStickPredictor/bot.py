@@ -7,6 +7,12 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime
 import webbrowser
+import json
+from flask import Flask, render_template_string
+import threading
+
+# Initialize Flask app
+app = Flask(__name__)
 
 # Binance API Credentials
 API_KEY = 'althoUYXvlKUlBJ8NvUiM8RnH0UEA1mM56MdFAeB9JHewYvawZbcFkfajIwct1GN'
@@ -20,6 +26,40 @@ SHORT_MA = 10
 LONG_MA = 50
 TRADE_AMOUNT = 1  # LTC amount
 USE_YFINANCE = False  # Set to True to use Yahoo Finance instead of Binance
+
+# Global variables for chart data
+current_chart_data = None
+current_analysis = None
+
+# HTML template for the live chart
+CHART_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Chart</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <meta http-equiv="refresh" content="60">
+</head>
+<body>
+    <div id="chart"></div>
+    <div id="analysis"></div>
+    <script>
+        var chartData = {{ chart_data | safe }};
+        var analysis = {{ analysis | safe }};
+        
+        Plotly.newPlot('chart', chartData.data, chartData.layout);
+        
+        var analysisDiv = document.getElementById('analysis');
+        analysisDiv.innerHTML = '<h2>Market Analysis</h2>' +
+            '<p>Current Price: ' + analysis.current_price + '</p>' +
+            '<p>Price Change: ' + analysis.price_change + '</p>' +
+            '<p>Volume Change: ' + analysis.volume_change + '</p>' +
+            '<p>Short MA: ' + analysis.short_ma + '</p>' +
+            '<p>Long MA: ' + analysis.long_ma + '</p>';
+    </script>
+</body>
+</html>
+'''
 
 def init_exchange():
     return ccxt.binance({
@@ -67,7 +107,7 @@ def calculate_indicators(df):
     
     return df
 
-def create_candlestick_chart(df, signal=None):
+def create_chart_data(df, signal=None):
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
                        vertical_spacing=0.03, 
                        row_heights=[0.7, 0.3])
@@ -128,10 +168,17 @@ def create_candlestick_chart(df, signal=None):
         height=800
     )
 
-    # Save and open the chart
-    chart_file = 'trading_chart.html'
-    fig.write_html(chart_file)
-    webbrowser.open('file://' + os.path.realpath(chart_file))
+    return fig.to_json()
+
+def create_analysis_data(df):
+    latest = df.iloc[-1]
+    return {
+        'current_price': f"{latest['close']:.8f}",
+        'price_change': f"{latest['price_change_pct']:.2f}%",
+        'volume_change': f"{latest['volume_change_pct']:.2f}%",
+        'short_ma': f"{latest['ma_short']:.8f} ({latest['ma_short_pct']:.2f}%)",
+        'long_ma': f"{latest['ma_long']:.8f} ({latest['ma_long_pct']:.2f}%)"
+    }
 
 def apply_strategy(df):
     latest = df.iloc[-1]
@@ -173,7 +220,27 @@ def execute_trade(exchange, signal):
         )
     return None
 
+@app.route('/')
+def index():
+    global current_chart_data, current_analysis
+    if current_chart_data is None or current_analysis is None:
+        return "Waiting for data..."
+    return render_template_string(CHART_TEMPLATE, 
+                                chart_data=current_chart_data,
+                                analysis=current_analysis)
+
+def run_flask():
+    app.run(host='0.0.0.0', port=5000)
+
 def main():
+    # Start Flask server in a separate thread
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+    
+    print("Flask server started at http://localhost:5000")
+    print("Open this URL in your browser to see live updates")
+
     exchange = init_exchange()
     while True:
         try:
@@ -185,8 +252,10 @@ def main():
             df = calculate_indicators(df)
             signal = apply_strategy(df)
             
-            # Create and display the chart
-            create_candlestick_chart(df, signal)
+            # Update global variables for the web interface
+            global current_chart_data, current_analysis
+            current_chart_data = create_chart_data(df, signal)
+            current_analysis = create_analysis_data(df)
             
             if signal:
                 if not USE_YFINANCE:
@@ -197,11 +266,11 @@ def main():
             else:
                 print("No action:", time.ctime())
                 
-            time.sleep(60 * 60)  # wait one hour
+            time.sleep(60)  # Update every minute
             
         except Exception as e:
             print(f"Error occurred: {str(e)}")
-            time.sleep(60)  # wait a minute before retrying
+            time.sleep(60)
 
 if __name__ == "__main__":
     main()
