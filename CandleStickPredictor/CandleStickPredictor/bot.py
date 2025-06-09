@@ -201,68 +201,293 @@ CHART_TEMPLATE = '''
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <meta http-equiv="refresh" content="300">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
         .analysis-box { 
-            background-color: #f5f5f5; 
-            padding: 15px; 
-            border-radius: 5px; 
-            margin: 10px 0; 
+            background-color: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .analysis-box:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
         }
         .signal { 
             font-weight: bold; 
-            color: #2c3e50; 
+            color: #2c3e50;
+            cursor: pointer;
         }
         .buy { color: #27ae60; }
         .sell { color: #c0392b; }
         .hold { color: #7f8c8d; }
+        .expandable {
+            cursor: pointer;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .expandable:hover {
+            background-color: #f8f9fa;
+        }
+        .details {
+            display: none;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .chart-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .pattern-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+        .indicator-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .update-time {
+            text-align: right;
+            color: #666;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
-    <div id="chart"></div>
-    <div class="analysis-box">
-        <h2>Market Analysis</h2>
-        <div id="analysis"></div>
+    <div class="container">
+        <div class="chart-container">
+            <div id="chart"></div>
+        </div>
+        
+        <div class="analysis-box">
+            <h2>Market Analysis</h2>
+            <div id="analysis"></div>
+        </div>
+        
+        <div class="analysis-box">
+            <h2>Trading Signals</h2>
+            <div id="signals"></div>
+        </div>
+        
+        <div class="analysis-box">
+            <h2>Prediction</h2>
+            <div id="prediction"></div>
+        </div>
+        
+        <div class="analysis-box">
+            <h2>Pattern Analysis</h2>
+            <div id="patterns"></div>
+        </div>
+        
+        <div class="update-time" id="lastUpdate"></div>
     </div>
-    <div class="analysis-box">
-        <h2>Trading Signals</h2>
-        <div id="signals"></div>
-    </div>
-    <div class="analysis-box">
-        <h2>Prediction</h2>
-        <div id="prediction"></div>
-    </div>
-    <div id="lastUpdate"></div>
+
     <script>
         var chartData = {{ chart_data | safe }};
         var analysis = {{ analysis | safe }};
         var prediction = {{ prediction | safe }};
         var lastUpdate = "{{ last_update }}";
         
-        Plotly.newPlot('chart', chartData.data, chartData.layout);
+        // Initialize the chart with interactive features
+        Plotly.newPlot('chart', chartData.data, chartData.layout, {
+            displayModeBar: true,
+            modeBarButtonsToAdd: ['drawline', 'drawopenpath', 'eraseshape'],
+            displaylogo: false
+        });
         
+        // Market Analysis Section
         var analysisDiv = document.getElementById('analysis');
-        analysisDiv.innerHTML = 
-            '<p>Current Price: ' + analysis.current_price + '</p>' +
-            '<p>Price Change: ' + analysis.price_change + '</p>' +
-            '<p>Volume Change: ' + analysis.volume_change + '</p>' +
-            '<p>Short MA: ' + analysis.short_ma + '</p>' +
-            '<p>Long MA: ' + analysis.long_ma + '</p>';
+        analysisDiv.innerHTML = `
+            <div class="expandable" onclick="toggleDetails('price-details')">
+                <h3>Price Information</h3>
+                <p>Current Price: <span class="indicator-value">${analysis.current_price}</span></p>
+                <p>Price Change: <span class="indicator-value">${analysis.price_change}</span></p>
+            </div>
+            <div id="price-details" class="details">
+                <p>24h High: ${analysis.high_24h || 'N/A'}</p>
+                <p>24h Low: ${analysis.low_24h || 'N/A'}</p>
+                <p>Volume: ${analysis.volume || 'N/A'}</p>
+            </div>
             
+            <div class="expandable" onclick="toggleDetails('ma-details')">
+                <h3>Moving Averages</h3>
+                <p>Short MA: <span class="indicator-value">${analysis.short_ma}</span></p>
+                <p>Long MA: <span class="indicator-value">${analysis.long_ma}</span></p>
+            </div>
+            <div id="ma-details" class="details">
+                <p>MA Crossover: ${analysis.ma_crossover || 'None'}</p>
+                <p>MA Trend: ${analysis.ma_trend || 'Neutral'}</p>
+            </div>
+        `;
+        
+        // Trading Signals Section
         var signalsDiv = document.getElementById('signals');
-        signalsDiv.innerHTML = 
-            '<p class="signal">Trend Strength: ' + prediction.trend_analysis.trend_strength + '</p>' +
-            '<p>ADX: ' + prediction.trend_analysis.adx + '</p>' +
-            '<p>RSI: ' + prediction.trend_analysis.rsi + ' (' + prediction.trend_analysis.rsi_signal + ')</p>' +
-            '<p>Patterns: ' + (prediction.patterns_detected.length ? prediction.patterns_detected.join(', ') : 'None') + '</p>';
+        signalsDiv.innerHTML = `
+            <div class="expandable" onclick="toggleDetails('trend-details')">
+                <h3>Trend Analysis</h3>
+                <p class="signal">Trend Strength: <span class="indicator-value">${prediction.trend_analysis.trend_strength}</span></p>
+                <p>ADX: <span class="indicator-value">${prediction.trend_analysis.adx}</span></p>
+            </div>
+            <div id="trend-details" class="details">
+                <p>ADX Interpretation: ${getADXInterpretation(prediction.trend_analysis.adx)}</p>
+                <p>Trend Direction: ${getTrendDirection(prediction.trend_analysis)}</p>
+            </div>
             
+            <div class="expandable" onclick="toggleDetails('rsi-details')">
+                <h3>RSI Analysis</h3>
+                <p>RSI: <span class="indicator-value">${prediction.trend_analysis.rsi}</span></p>
+                <p>Signal: <span class="indicator-value">${prediction.trend_analysis.rsi_signal}</span></p>
+            </div>
+            <div id="rsi-details" class="details">
+                <p>RSI Interpretation: ${getRSIInterpretation(prediction.trend_analysis.rsi)}</p>
+                <p>Potential Action: ${getRSIAction(prediction.trend_analysis.rsi)}</p>
+            </div>
+        `;
+        
+        // Prediction Section
         var predictionDiv = document.getElementById('prediction');
-        predictionDiv.innerHTML = 
-            '<p class="signal ' + prediction.recommendation.toLowerCase().replace(' ', '') + '">' +
-            'Recommendation: ' + prediction.recommendation + '</p>' +
-            '<p>' + prediction.explanation + '</p>';
-            
-        document.getElementById('lastUpdate').innerHTML = 
-            '<p>Last Update: ' + lastUpdate + '</p>';
+        predictionDiv.innerHTML = `
+            <div class="expandable" onclick="toggleDetails('recommendation-details')">
+                <h3 class="signal ${prediction.recommendation.toLowerCase().replace(' ', '')}">
+                    Recommendation: ${prediction.recommendation}
+                </h3>
+            </div>
+            <div id="recommendation-details" class="details">
+                <p>${prediction.explanation}</p>
+                <div class="pattern-info">
+                    <h4>Pattern Analysis:</h4>
+                    <p>${getPatternAnalysis(prediction.patterns_detected)}</p>
+                </div>
+            </div>
+        `;
+        
+        // Pattern Analysis Section
+        var patternsDiv = document.getElementById('patterns');
+        patternsDiv.innerHTML = `
+            <div class="expandable" onclick="toggleDetails('pattern-details')">
+                <h3>Detected Patterns</h3>
+                <p>Patterns: ${prediction.patterns_detected.length ? prediction.patterns_detected.join(', ') : 'None'}</p>
+            </div>
+            <div id="pattern-details" class="details">
+                ${getDetailedPatternInfo(prediction.patterns_detected)}
+            </div>
+        `;
+        
+        document.getElementById('lastUpdate').innerHTML = `Last Update: ${lastUpdate}`;
+        
+        // Helper functions
+        function toggleDetails(id) {
+            var details = document.getElementById(id);
+            if (details.style.display === "block") {
+                details.style.display = "none";
+            } else {
+                details.style.display = "block";
+            }
+        }
+        
+        function getADXInterpretation(adx) {
+            if (adx > 25) return "Strong trend - Good for trend following strategies";
+            if (adx > 20) return "Moderate trend - Consider trend following with caution";
+            return "Weak trend - Consider range trading strategies";
+        }
+        
+        function getTrendDirection(analysis) {
+            if (analysis.adx > 25) {
+                return analysis.rsi > 50 ? "Upward" : "Downward";
+            }
+            return "Sideways";
+        }
+        
+        function getRSIInterpretation(rsi) {
+            if (rsi > 70) return "Overbought - Potential reversal or correction";
+            if (rsi < 30) return "Oversold - Potential reversal or bounce";
+            return "Neutral - No clear signal";
+        }
+        
+        function getRSIAction(rsi) {
+            if (rsi > 70) return "Consider taking profits or short positions";
+            if (rsi < 30) return "Consider buying opportunities";
+            return "Monitor for clearer signals";
+        }
+        
+        function getPatternAnalysis(patterns) {
+            if (!patterns.length) return "No significant patterns detected";
+            return patterns.map(pattern => {
+                switch(pattern) {
+                    case "Doji": return "Doji indicates market indecision and potential trend reversal";
+                    case "Hammer": return "Hammer suggests potential bullish reversal after downtrend";
+                    case "Bullish Engulfing": return "Bullish Engulfing shows strong buying pressure";
+                    case "Bearish Engulfing": return "Bearish Engulfing shows strong selling pressure";
+                    default: return pattern;
+                }
+            }).join("<br>");
+        }
+        
+        function getDetailedPatternInfo(patterns) {
+            if (!patterns.length) return "No patterns to analyze";
+            return patterns.map(pattern => {
+                let info = "";
+                switch(pattern) {
+                    case "Doji":
+                        info = "A Doji represents indecision in the market. The opening and closing prices are virtually equal, creating a cross-like pattern. This often indicates a potential trend reversal.";
+                        break;
+                    case "Hammer":
+                        info = "A Hammer is a bullish reversal pattern that forms after a downtrend. It has a small body at the top and a long lower shadow, suggesting that sellers pushed the price down but buyers were able to push it back up.";
+                        break;
+                    case "Bullish Engulfing":
+                        info = "A Bullish Engulfing pattern occurs when a small bearish candle is followed by a larger bullish candle that completely engulfs the previous candle. This indicates strong buying pressure and potential trend reversal.";
+                        break;
+                    case "Bearish Engulfing":
+                        info = "A Bearish Engulfing pattern occurs when a small bullish candle is followed by a larger bearish candle that completely engulfs the previous candle. This indicates strong selling pressure and potential trend reversal.";
+                        break;
+                }
+                return `<div class="pattern-info">
+                    <h4>${pattern}</h4>
+                    <p>${info}</p>
+                </div>`;
+            }).join("");
+        }
     </script>
 </body>
 </html>
