@@ -53,10 +53,10 @@ def apply_strategy(df):
 
 def execute_trade(exchange, signal):
     if signal == 'buy':
-        print("Placing buy order…")
+        print("Placing buy orderï¿½")
         return exchange.create_market_buy_order(SYMBOL, TRADE_AMOUNT)
     if signal == 'sell':
-        print("Placing sell order…")
+        print("Placing sell orderï¿½")
         return exchange.create_market_sell_order(SYMBOL, TRADE_AMOUNT)
     return None
 
