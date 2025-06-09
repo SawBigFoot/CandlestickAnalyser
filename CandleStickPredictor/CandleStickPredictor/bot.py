@@ -2,22 +2,31 @@ import ccxt
 import pandas as pd
 import time
 import yfinance as yf  # <--- Added yfinance
+import os
 
-API_KEY = 'YOUR_API_KEY'
-API_SECRET = 'YOUR_API_SECRET'
-SYMBOL = 'BTC/USDT'     # For ccxt (crypto)
+# Binance API Credentials
+API_KEY = 'althoUYXvlKUlBJ8NvUiM8RnH0UEA1mM56MdFAeB9JHewYvawZbcFkfajIwct1GN'
+API_SECRET = 'v7wZcwfMZEV3HI3mrKDzFy8nnGdyUmK1G63XF0QarPvSDhZD5tUxx0jSkKAfiXIE'
+
+# Trading Parameters
+SYMBOL = 'LTC/BTC'     # For ccxt (crypto)
 YF_SYMBOL = 'AAPL'      # For yfinance (stock)
 TIMEFRAME = '1h'
 SHORT_MA = 10
 LONG_MA = 50
-TRADE_AMOUNT = 0.001  # BTC or stock shares depending on asset
-USE_YFINANCE = False  # <--- Switch between ccxt and yfinance data
+TRADE_AMOUNT = 1  # LTC amount
+USE_YFINANCE = False  # Set to True to use Yahoo Finance instead of Binance
 
 def init_exchange():
     return ccxt.binance({
         'apiKey': API_KEY,
         'secret': API_SECRET,
         'enableRateLimit': True,
+        'options': {
+            'defaultType': 'spot',
+            'adjustForTimeDifference': True,
+            'recvWindow': 5000
+        }
     })
 
 def fetch_data_ccxt(exchange):
@@ -53,11 +62,21 @@ def apply_strategy(df):
 
 def execute_trade(exchange, signal):
     if signal == 'buy':
-        print("Placing buy order�")
-        return exchange.create_market_buy_order(SYMBOL, TRADE_AMOUNT)
+        print("Placing buy order...")
+        return exchange.create_limit_buy_order(
+            SYMBOL,
+            TRADE_AMOUNT,
+            0.1,  # price
+            {'timeInForce': 'GTC'}
+        )
     if signal == 'sell':
-        print("Placing sell order�")
-        return exchange.create_market_sell_order(SYMBOL, TRADE_AMOUNT)
+        print("Placing sell order...")
+        return exchange.create_limit_sell_order(
+            SYMBOL,
+            TRADE_AMOUNT,
+            0.1,  # price
+            {'timeInForce': 'GTC'}
+        )
     return None
 
 def main():
