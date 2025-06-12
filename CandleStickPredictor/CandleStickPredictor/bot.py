@@ -6,6 +6,7 @@ import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime
+import subprocess
 import webbrowser
 import json
 from flask import Flask, render_template_string
@@ -242,8 +243,12 @@ def main():
     print("Open this URL in your browser to see live updates")
 
     exchange = init_exchange()
+
+    global current_chart_data, current_analysis   # <-- move this here, top of function
+
     while True:
         try:
+            print("Check for general debugging purposses")
             if USE_YFINANCE:
                 df = fetch_data_yfinance()
             else:
@@ -251,12 +256,22 @@ def main():
 
             df = calculate_indicators(df)
             signal = apply_strategy(df)
-            
-            # Update global variables for the web interface
-            global current_chart_data, current_analysis
+
+            # Create chart and analysis data once
             current_chart_data = create_chart_data(df, signal)
             current_analysis = create_analysis_data(df)
-            
+
+            # Save to JSON file
+            data_to_save = {
+                "chart_data": json.loads(current_chart_data),
+                "analysis": current_analysis
+            }
+
+            output_path = "/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/data.json"
+            with open(output_path, "w") as f:
+                json.dump(data_to_save, f, indent=4)
+
+            # Execute trade if signal exists and not using yfinance
             if signal:
                 if not USE_YFINANCE:
                     order = execute_trade(exchange, signal)
@@ -265,12 +280,23 @@ def main():
                     print(f"Signal: {signal} for {YF_SYMBOL} (no trade executed)")
             else:
                 print("No action:", time.ctime())
-                
+
+            # Run external C++ executable
+            cpp_executable = "/tmp/CandleStickPredictorExecutable"
+            try:
+                result = subprocess.run([cpp_executable], capture_output=True, text=True, check=True)
+                print("Program output:")
+                print(result.stdout)
+            except subprocess.CalledProcessError as e:
+                print(f"Error running executable: {e}")
+                print(f"Stderr:\n{e.stderr}")
+
             time.sleep(60)  # Update every minute
-            
+
         except Exception as e:
             print(f"Error occurred: {str(e)}")
             time.sleep(60)
+
 
 if __name__ == "__main__":
     main()

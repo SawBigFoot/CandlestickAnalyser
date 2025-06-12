@@ -1,0 +1,15 @@
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/bin/Debug/net8.0/CandleStickPredictor
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/bin/Debug/net8.0/CandleStickPredictor.deps.json
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/bin/Debug/net8.0/CandleStickPredictor.runtimeconfig.json
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/bin/Debug/net8.0/CandleStickPredictor.dll
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/bin/Debug/net8.0/CandleStickPredictor.pdb
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.AssemblyInfoInputs.cache
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.AssemblyInfo.cs
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.csproj.CoreCompileInputs.cache
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.sourcelink.json
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.dll
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/refint/CandleStickPredictor.dll
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.pdb
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/CandleStickPredictor.genruntimeconfig.cache
+/Users/ilovezinc/Repositories/investosuke/innvestoruke/CandlestickAnalyser/CandleStickPredictor/CandleStickPredictor/obj/Debug/net8.0/ref/CandleStickPredictor.dll
